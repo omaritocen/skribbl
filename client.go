@@ -8,6 +8,14 @@ import (
 )
 
 type Client struct {
+
+	// unique id for the client
+	id string
+
+	// Name of the client
+	name string
+
+	// Reference of the hub in the client
 	hub *Hub
 
 	// Websocket connection
@@ -15,12 +23,6 @@ type Client struct {
 
 	// Buffered channel of outbound messages
 	send chan []byte
-
-	// Name of the client
-	name string
-
-	// unique id for the client
-	id string
 }
 
 func NewClient(hub *Hub, conn *websocket.Conn, name string) *Client {
@@ -31,6 +33,16 @@ func NewClient(hub *Hub, conn *websocket.Conn, name string) *Client {
 		hub:  hub,
 		send: make(chan []byte, 256),
 	}
+}
+
+// readPump pumps messages from the websocket connection to the hub.
+func (c *Client) readPump() {
+
+}
+
+// writePump pumps messages from the hub to the websocket connection.
+func (c *Client) writePump() {
+
 }
 
 var upgrader = websocket.Upgrader{
@@ -55,5 +67,6 @@ func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 
 	hub.register <- client
 
-	// TODO: Handle Client Read/Write
+	go client.readPump()
+	go client.writePump()
 }
