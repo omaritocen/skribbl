@@ -37,11 +37,80 @@ func NewClient(hub *Hub, conn *websocket.Conn, name string) *Client {
 
 // readPump pumps messages from the websocket connection to the hub.
 func (c *Client) readPump() {
+	defer func() {
+		c.hub.unregister <- c
+		c.conn.Close()
+	}()
 
+	// TODO: Check if we really need the ping-pong handlers
+	for {
+		_, message, err := c.conn.ReadMessage()
+
+		if err != nil {
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				log.Printf("error: %v", err)
+			}
+			break
+		}
+
+		c.handleNewMessage(message)
+	}
 }
 
 // writePump pumps messages from the hub to the websocket connection.
 func (c *Client) writePump() {
+	// TODO: Check if we really need the ticker
+	defer func() {
+		c.conn.Close()
+	}()
+
+	for {
+		message, ok := <-c.send
+
+		if !ok {
+			// The hub closed the channel.
+			c.conn.WriteMessage(websocket.CloseMessage, []byte{})
+			return
+		}
+
+		w, err := c.conn.NextWriter(websocket.BinaryMessage)
+		if err != nil {
+			return
+		}
+
+		w.Write(message)
+
+		if err := w.Close(); err != nil {
+			return
+		}
+
+	}
+}
+
+func (c *Client) handleNewMessage(jsonMessage []byte) {
+	message := decodeMessage(jsonMessage)
+	message.sender = c
+
+	switch message.action {
+	case JoinRoomAction:
+		c.handleJoinRoomMessage(message)
+	case LeaveRoomAction:
+		c.handleLeaveRoomMessage(message)
+	case TextMessageAction:
+		c.handleTextMessage(message)
+
+	}
+}
+
+func (c *Client) handleJoinRoomMessage(message Message) {
+
+}
+
+func (c *Client) handleLeaveRoomMessage(message Message) {
+
+}
+
+func (c *Client) handleTextMessage(message Message) {
 
 }
 
