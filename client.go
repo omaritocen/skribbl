@@ -73,7 +73,7 @@ func (c *Client) writePump() {
 			return
 		}
 
-		w, err := c.conn.NextWriter(websocket.BinaryMessage)
+		w, err := c.conn.NextWriter(websocket.TextMessage)
 		if err != nil {
 			return
 		}
@@ -89,9 +89,9 @@ func (c *Client) writePump() {
 
 func (c *Client) handleNewMessage(jsonMessage []byte) {
 	message := decodeMessage(jsonMessage)
-	message.sender = c
+	message.Sender = c.name
 
-	switch message.action {
+	switch message.Action {
 	case JoinRoomAction:
 		c.handleJoinRoomMessage(message)
 	case LeaveRoomAction:
@@ -103,15 +103,38 @@ func (c *Client) handleNewMessage(jsonMessage []byte) {
 }
 
 func (c *Client) handleJoinRoomMessage(message Message) {
+	roomName := message.Body
+	room := c.hub.findRoomByName(roomName)
 
+	if room == nil {
+		room = c.hub.createRoom(roomName)
+	}
+
+	// We need a way to send room id for the user
+
+	room.register <- c
 }
 
 func (c *Client) handleLeaveRoomMessage(message Message) {
+	roomName := message.Body
+	room := c.hub.findRoomByName(roomName)
 
+	if room == nil {
+		return
+	}
+
+	room.unregister <- c
 }
 
 func (c *Client) handleTextMessage(message Message) {
+	roomId := message.Target
+	room := c.hub.findRoomById(roomId)
 
+	if room == nil {
+		return
+	}
+
+	room.broadcast <- &message
 }
 
 var upgrader = websocket.Upgrader{
@@ -126,7 +149,7 @@ func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	clientName := r.URL.Query().Get("Name")
+	clientName := r.URL.Query().Get("name")
 	if clientName == "" {
 		clientName = "NewUser"
 	}

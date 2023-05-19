@@ -6,16 +6,45 @@ import (
 )
 
 const (
-	JoinRoomAction    string = "join-room"
-	LeaveRoomAction          = "leave-room"
-	TextMessageAction        = "text-message"
+	/*
+			JoinRoomMessage
+		{
+			Author: 0x0031f (pointer to client),
+			Action: "join-room",
+			Body: "room-name-1",
+			Target: nil
+		}
+	*/
+	JoinRoomAction string = "join-room"
+
+	/*
+			LeaveRoomMessage
+		{
+			Author: 0x0031f (pointer to client),
+			Action: "leave-room",
+			Body: "room-name-1",
+			Target: nil
+		}
+	*/
+	LeaveRoomAction = "leave-room"
+
+	/*
+			TextMessage
+		{
+			Author: 0x0031f (pointer to client),
+			Action: "text-message",
+			Body: "Hello this is text body",
+			Target: "room-id-1"
+		}
+	*/
+	TextMessageAction = "text-message"
 )
 
 type Message struct {
-	sender *Client
-	body   []byte
-	target string
-	action string
+	Sender string `json:"sender"`
+	Body   string `json:"body"`
+	Target string `json:"target"`
+	Action string `json:"action"`
 }
 
 func (m *Message) encode() []byte {

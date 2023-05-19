@@ -11,7 +11,7 @@ var addr = flag.String("addr", "localhost:8080", "http service address")
 func main() {
 
 	hub := NewHub()
-	hub.Run()
+	go hub.Run()
 
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		serveWs(hub, w, r)
