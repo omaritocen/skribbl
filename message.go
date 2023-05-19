@@ -7,43 +7,49 @@ import (
 
 const (
 	/*
-			JoinRoomMessage
+			JoinRoomMessage: used to join/create a room
 		{
-			Author: 0x0031f (pointer to client),
+			Sender: 0x0031f (pointer to client),
 			Action: "join-room",
 			Body: "room-name-1",
-			Target: nil
 		}
 	*/
 	JoinRoomAction string = "join-room"
 
 	/*
-			LeaveRoomMessage
+			LeaveRoomMessage: used to leave a room
 		{
-			Author: 0x0031f (pointer to client),
+			Sender: "client-name-1",
 			Action: "leave-room",
 			Body: "room-name-1",
-			Target: nil
 		}
 	*/
 	LeaveRoomAction = "leave-room"
 
 	/*
-			TextMessage
+			TextMessage: used to send messages in chat
 		{
-			Author: 0x0031f (pointer to client),
+			Sender: "client-name-1",
 			Action: "text-message",
 			Body: "Hello this is text body",
-			Target: "room-id-1"
 		}
 	*/
 	TextMessageAction = "text-message"
+
+	/*
+			JoinRoomMessage: used to confirm user joining the room and send room info
+		{
+			Sender: "client-name-1",
+			Action: "join-room",
+			Body: "room-name-1",
+		}
+	*/
+	UserJoinedRoomAction string = "user-joined-room"
 )
 
 type Message struct {
 	Sender string `json:"sender"`
 	Body   string `json:"body"`
-	Target string `json:"target"`
 	Action string `json:"action"`
 }
 

@@ -57,27 +57,41 @@ func (r *Room) unregisterClient(client *Client) {
 	}
 }
 
+// Send message to all clients
 func (r *Room) broadcastToClients(message []byte) {
 	for client := range r.clients {
 		client.send <- message
 	}
 }
 
+// Notifies room users that a new client has joined
 func (r *Room) notifyNewClientJoin(client *Client) {
 	message := &Message{
 		Sender: client.name,
-		Target: r.id,
 		Action: TextMessageAction,
 		Body:   fmt.Sprintf("User %s has joined the room!", client.name),
 	}
 
 	r.broadcastToClients(message.encode())
+	r.sendInfoToClient(client)
+
 }
 
+// Notifies the user of the successful join and provides room id
+func (r *Room) sendInfoToClient(client *Client) {
+	message := &Message{
+		Sender: client.name,
+		Body:   r.name,
+		Action: UserJoinedRoomAction,
+	}
+
+	client.send <- message.encode()
+}
+
+// Notifies room users that a client has left
 func (r *Room) notifyNewClientLeave(client *Client) {
 	message := &Message{
 		Sender: client.name,
-		Target: r.id,
 		Action: TextMessageAction,
 		Body:   fmt.Sprintf("User %s has left the room!", client.name),
 	}

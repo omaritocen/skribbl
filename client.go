@@ -12,7 +12,7 @@ type Client struct {
 	// unique id for the client
 	id string
 
-	// Name of the client
+	// name of the client
 	name string
 
 	// Reference of the hub in the client
@@ -23,6 +23,9 @@ type Client struct {
 
 	// Buffered channel of outbound messages
 	send chan []byte
+
+	// The room the user is connected to
+	room *Room
 }
 
 func NewClient(hub *Hub, conn *websocket.Conn, name string) *Client {
@@ -87,6 +90,11 @@ func (c *Client) writePump() {
 	}
 }
 
+func (c *Client) disconnectClient() {
+	c.hub.unregister <- c
+	close(c.send)
+}
+
 func (c *Client) handleNewMessage(jsonMessage []byte) {
 	message := decodeMessage(jsonMessage)
 	message.Sender = c.name
@@ -103,6 +111,12 @@ func (c *Client) handleNewMessage(jsonMessage []byte) {
 }
 
 func (c *Client) handleJoinRoomMessage(message Message) {
+
+	if c.room != nil {
+		// TODO: Maybe send error?
+		return
+	}
+
 	roomName := message.Body
 	room := c.hub.findRoomByName(roomName)
 
@@ -110,8 +124,7 @@ func (c *Client) handleJoinRoomMessage(message Message) {
 		room = c.hub.createRoom(roomName)
 	}
 
-	// We need a way to send room id for the user
-
+	c.room = room
 	room.register <- c
 }
 
@@ -123,18 +136,16 @@ func (c *Client) handleLeaveRoomMessage(message Message) {
 		return
 	}
 
+	c.room = nil
 	room.unregister <- c
 }
 
 func (c *Client) handleTextMessage(message Message) {
-	roomId := message.Target
-	room := c.hub.findRoomById(roomId)
-
-	if room == nil {
+	if c.room == nil {
 		return
 	}
 
-	room.broadcast <- &message
+	c.room.broadcast <- &message
 }
 
 var upgrader = websocket.Upgrader{
